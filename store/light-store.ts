@@ -107,7 +107,7 @@ export const useLightStore = create<LightState>()(
         }));
 
         try {
-          const response = await apiClient.toggle();
+          const response = newState ? await apiClient.turnOn() : await apiClient.turnOff();
           console.log('response', response);
         } catch (error) {
           console.error('Ошибка при отправке команды переключения питания:', error);

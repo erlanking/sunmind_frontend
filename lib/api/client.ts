@@ -103,6 +103,14 @@ class ApiClient {
     return this.request<{ status: string }>('/light/toggle', { method: 'POST' });
   }
 
+  async turnOn(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/on', { method: 'POST' });
+  }
+
+  async turnOff(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/off', { method: 'POST' });
+  }
+
   async setControlMode(mode: 'manual' | 'auto'): Promise<{ status: string }> {
     return this.request<{ status: string }>('/light/mode', {
       method: 'POST',

@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function LightControl({ deviceId }: Props) {
-  const { settings, togglePower, setBrightness, setControlMode } = useLightStore();
+  const { settings, togglePower, setBrightness, setMode, setControlMode } = useLightStore();
   const [isConfirming, setIsConfirming] = useState(false);
   const [controlMode, setLocalControlMode] = useState<ControlMode>('manual');
 
@@ -227,6 +227,73 @@ export function LightControl({ deviceId }: Props) {
           <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
             {settings.isOn ? 'Светильник включен' : 'Светильник выключен'}
           </p>
+        </div>
+      )}
+
+      {/* Режимы работы — только ручной режим */}
+      {controlMode === 'manual' && (
+        <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            Режим работы
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            {(
+              [
+                {
+                  value: 'economy' as const,
+                  label: 'Эконом',
+                  desc: '25%',
+                  brightness: 64,
+                  icon: (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  ),
+                },
+                {
+                  value: 'default' as const,
+                  label: 'Стандарт',
+                  desc: '50%',
+                  brightness: 128,
+                  icon: (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  ),
+                },
+                {
+                  value: 'maximum' as const,
+                  label: 'Максимум',
+                  desc: '100%',
+                  brightness: 255,
+                  icon: (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  ),
+                },
+              ]
+            ).map(({ value, label, desc, brightness, icon }) => {
+              const isActive = settings.mode === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setMode(value);
+                    handleBrightnessChange(brightness);
+                  }}
+                  className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all duration-200 ${
+                    isActive
+                      ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-md dark:bg-orange-900/20 dark:text-orange-400'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:bg-orange-50/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-orange-700'
+                  }`}>
+                  <span className={isActive ? 'text-orange-500' : 'text-gray-400'}>{icon}</span>
+                  <span className="text-sm font-semibold">{label}</span>
+                  <span className="text-xs opacity-60">{desc}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
