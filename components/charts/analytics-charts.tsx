@@ -36,8 +36,8 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
       value: data.reduce((sum, d) => sum + d.energy, 0),
     },
     {
-      name: 'Экономия',
-      value: data.reduce((sum, d) => sum + d.savings, 0),
+      name: 'Часы работы',
+      value: data.reduce((sum, d) => sum + d.hours, 0),
     },
     {
       name: 'Активность',
@@ -121,13 +121,13 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* График экономии денег */}
+      {/* График часов работы */}
       <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Экономия (₸)
+          Часы работы (ч)
         </h3>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="date"
@@ -149,16 +149,8 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
               }}
             />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="savings"
-              stroke="#8b5cf6"
-              strokeWidth={2}
-              name="Экономия (₸)"
-              dot={{ fill: '#8b5cf6', r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
+            <Bar dataKey="hours" fill="#8b5cf6" name="Часы работы (ч)" />
+          </BarChart>
         </ResponsiveContainer>
       </div>
 

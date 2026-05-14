@@ -20,13 +20,13 @@ export function generateMockAnalyticsData(days: number = 30): Array<{
   date: string;
   activity: number;
   energy: number;
-  savings: number;
+  hours: number;
 }> {
   const data: Array<{
     date: string;
     activity: number;
     energy: number;
-    savings: number;
+    hours: number;
   }> = [];
   const today = new Date();
 
@@ -37,7 +37,7 @@ export function generateMockAnalyticsData(days: number = 30): Array<{
       date: date.toISOString().split('T')[0],
       activity: Math.floor(Math.random() * 50) + 10,
       energy: Math.floor(Math.random() * 20) + 5,
-      savings: Math.floor(Math.random() * 10) + 2,
+      hours: Math.floor(Math.random() * 12) + 1,
     });
   }
 

@@ -39,15 +39,15 @@ export interface EnergyData {
   energy: number; // кВт·ч
 }
 
-export interface SavingsData {
+export interface HoursData {
   date: string;
-  savings: number; // ₸
+  hours: number; // ч
 }
 
 export interface AnalyticsData {
   activity: ActivityData[];
   energy: EnergyData[];
-  savings: SavingsData[];
+  hours: HoursData[];
 }
 
 // Период для фильтрации
