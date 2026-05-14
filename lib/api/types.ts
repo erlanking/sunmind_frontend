@@ -117,6 +117,8 @@ export interface DeviceStatus {
   mode: 'manual' | 'auto' | 'schedule';
   lastSeen: string | null;
   connected: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   powerSource?: string;
   isCharging?: boolean;
   chargeMode?: string;

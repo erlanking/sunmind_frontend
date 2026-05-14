@@ -16,6 +16,7 @@ export function Header() {
     { href: '/', label: 'Главная' },
     { href: '/dashboard/control', label: 'Управление' },
     { href: '/dashboard/analytics', label: 'Аналитика' },
+    { href: '/dashboard/admin', label: 'Карта' },
   ];
 
   const handleLogout = () => {

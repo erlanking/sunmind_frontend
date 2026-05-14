@@ -111,6 +111,16 @@ class ApiClient {
   }
 
   // Устройства (с auth)
+  async updateDevice(
+    deviceId: string,
+    data: { name?: string; latitude?: number | null; longitude?: number | null; zoneId?: number | null },
+  ): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getDevices(): Promise<DeviceStatus[]> {
     return this.request<DeviceStatus[]>('/api/devices');
   }
