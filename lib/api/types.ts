@@ -102,6 +102,37 @@ export interface DeviceTelemetry {
   timestamp: string;
 }
 
+export interface DeviceStatus {
+  id?: number;
+  deviceId: string;
+  name?: string | null;
+  lux?: number;
+  motion: boolean;
+  brightness?: number;
+  batteryVoltage?: number;
+  batteryPercent?: number;
+  temperature?: number | null;
+  humidity?: number | null;
+  manualMode: boolean;
+  mode: 'manual' | 'auto' | 'schedule';
+  lastSeen: string | null;
+  connected: boolean;
+  powerSource?: string;
+  isCharging?: boolean;
+  chargeMode?: string;
+  lowBatteryThreshold?: number;
+  fullChargeThreshold?: number;
+  autoSolarCharge?: boolean;
+}
+
+export interface ScheduleSettings {
+  deviceId?: string;
+  onHour: number;
+  onMinute: number;
+  offHour: number;
+  offMinute: number;
+}
+
 export interface DeviceSettings {
   brightness_default: number;
   lux_threshold: number;

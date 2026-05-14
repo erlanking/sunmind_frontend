@@ -38,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const response = await apiClient.login({ email, password });
+          setAuthToken(response.access_token);
 
           // Получаем информацию о пользователе
           const user = await apiClient.getCurrentUser(response.access_token);
@@ -73,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
 
           // После регистрации автоматически входим
           const loginResponse = await apiClient.login({ email, password });
+          setAuthToken(loginResponse.access_token);
 
           set({
             user: {
@@ -147,6 +149,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       onRehydrateStorage: () => (state) => {
         if (state?.token && typeof window !== 'undefined') {
+          setAuthToken(state.token);
           setTimeout(() => {
             state.fetchCurrentUser();
           }, 100);

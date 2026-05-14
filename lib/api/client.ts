@@ -1,11 +1,16 @@
 import { NewReview, Review } from '@/types';
 import { API_CONFIG, getAuthToken } from './config';
-import type { LoginRequest, LoginResponse, RegisterRequest, UserResponse, ApiError } from './types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  UserResponse,
+  ApiError,
+  DeviceStatus,
+  ScheduleSettings,
+} from './types';
 
 class ApiClient {
-  mode(deviceId: string | null, mode: string) {
-    throw new Error('Method not implemented.');
-  }
   private baseURL: string;
 
   constructor(baseURL: string = process.env.REACT_APP_BASE_URL || API_CONFIG.baseURL) {
@@ -41,7 +46,6 @@ class ApiClient {
         );
       }
 
-      // Если ответ пустой (например, для 204 No Content)
       if (response.status === 204) {
         return {} as T;
       }
@@ -78,35 +82,85 @@ class ApiClient {
     });
   }
 
+  // Отзывы
   async getReviews(): Promise<Review[]> {
-    return this.request<Review[]>('/review', {
-      method: 'GET',
-    });
+    return this.request<Review[]>('/review', { method: 'GET' });
   }
 
-  // Добавить отзыв
   async addReview(data: NewReview): Promise<Review> {
     return this.request<Review>('/review', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
-  async toggle(): Promise<Review> {
-    return this.request<Review>('/light/toggle', {
-      method: 'POST',
-    });
+
+  async deleteReview(id: string): Promise<void> {
+    return this.request<void>(`/review/${id}`, { method: 'DELETE' });
   }
-  async setControlMode(mode: 'manual' | 'auto'): Promise<Review> {
-    return this.request<Review>('/light/mode', {
+
+  // Управление светом (без auth)
+  async toggle(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/toggle', { method: 'POST' });
+  }
+
+  async setControlMode(mode: 'manual' | 'auto'): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/mode', {
       method: 'POST',
       body: JSON.stringify({ mode }),
     });
   }
 
-  // Удалить отзыв (опционально)
-  async deleteReview(id: string): Promise<void> {
-    return this.request<void>(`/review/${id}`, {
-      method: 'DELETE',
+  // Устройства (с auth)
+  async getDevices(): Promise<DeviceStatus[]> {
+    return this.request<DeviceStatus[]>('/api/devices');
+  }
+
+  async getDeviceStatus(deviceId: string): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/status`);
+  }
+
+  // Расписание
+  async getSchedule(deviceId: string): Promise<ScheduleSettings> {
+    return this.request<ScheduleSettings>(`/api/devices/${deviceId}/schedule`);
+  }
+
+  async setSchedule(
+    deviceId: string,
+    schedule: Omit<ScheduleSettings, 'deviceId'>,
+  ): Promise<ScheduleSettings> {
+    return this.request<ScheduleSettings>(`/api/devices/${deviceId}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(schedule),
+    });
+  }
+
+  // Управление АКБ
+  async setCharging(deviceId: string, isCharging: boolean): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/charge`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isCharging }),
+    });
+  }
+
+  async setPowerSource(deviceId: string, powerSource: 'battery' | 'ac'): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/power-source`, {
+      method: 'PATCH',
+      body: JSON.stringify({ powerSource }),
+    });
+  }
+
+  async setBatteryChargeMode(
+    deviceId: string,
+    settings: {
+      chargeMode: 'manual' | 'auto';
+      lowBatteryThreshold: number;
+      fullChargeThreshold: number;
+      autoSolarCharge: boolean;
+    },
+  ): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/battery-charge-mode`, {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
     });
   }
 
