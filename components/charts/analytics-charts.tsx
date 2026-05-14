@@ -36,8 +36,8 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
       value: data.reduce((sum, d) => sum + d.energy, 0),
     },
     {
-      name: 'Пластик',
-      value: data.reduce((sum, d) => sum + d.plastic, 0),
+      name: 'Экономия',
+      value: data.reduce((sum, d) => sum + d.savings, 0),
     },
     {
       name: 'Активность',
@@ -121,10 +121,10 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* График переработанного пластика */}
+      {/* График экономии денег */}
       <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Переработанный пластик (кг)
+          Экономия (₸)
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
@@ -151,10 +151,10 @@ export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
             <Legend />
             <Line
               type="monotone"
-              dataKey="plastic"
+              dataKey="savings"
               stroke="#8b5cf6"
               strokeWidth={2}
-              name="Пластик (кг)"
+              name="Экономия (₸)"
               dot={{ fill: '#8b5cf6', r: 4 }}
               activeDot={{ r: 6 }}
             />

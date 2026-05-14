@@ -39,15 +39,15 @@ export interface EnergyData {
   energy: number; // кВт·ч
 }
 
-export interface PlasticData {
+export interface SavingsData {
   date: string;
-  plastic: number; // кг
+  savings: number; // ₸
 }
 
 export interface AnalyticsData {
   activity: ActivityData[];
   energy: EnergyData[];
-  plastic: PlasticData[];
+  savings: SavingsData[];
 }
 
 // Период для фильтрации
