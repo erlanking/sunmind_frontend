@@ -140,3 +140,4 @@ npm run dev
 ## 🔗 Связанные проекты
 
 - [SunMind Backend API](../backend) - Backend API сервер
+# sunmind_frontend
