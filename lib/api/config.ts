@@ -32,7 +32,7 @@ export const removeAuthToken = () => {
 
 // Настройки API
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://sunmind-backend.vercel.app',
-  wsURL: process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL || 'https://sunmind-backend.vercel.app',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://sunmindthebestbackend-production.up.railway.app',
+  wsURL: process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL || 'https://sunmindthebestbackend-production.up.railway.app',
   timeout: 30000, // 30 секунд
 };

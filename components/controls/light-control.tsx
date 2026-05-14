@@ -84,7 +84,7 @@ export function LightControl({ deviceId }: Props) {
     setBrightness(value);
     try {
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://sunmind-backend.vercel.app'}/light/brightness`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://sunmindthebestbackend-production.up.railway.app'}/light/brightness`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
