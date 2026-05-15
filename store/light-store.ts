@@ -151,12 +151,15 @@ export const useLightStore = create<LightState>()(
 
       // Новый метод для управления режимом
       setControlMode: async (mode: 'manual' | 'auto') => {
+        const { deviceId } = get();
         set((state) => ({
           settings: { ...state.settings, controlMode: mode },
         }));
 
         try {
-          const response = await apiClient.setControlMode(mode);
+          const response = deviceId
+            ? await apiClient.setDeviceMode(deviceId, mode)
+            : await apiClient.setControlMode(mode);
           console.log('mode toggle', response);
           return response;
         } catch (error) {

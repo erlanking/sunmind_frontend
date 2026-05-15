@@ -118,6 +118,20 @@ class ApiClient {
     });
   }
 
+  async setDeviceBrightness(deviceId: string, brightness: number): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ brightness }),
+    });
+  }
+
+  async setDeviceMode(deviceId: string, mode: 'manual' | 'auto'): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    });
+  }
+
   async setControlMode(mode: 'manual' | 'auto'): Promise<{ status: string }> {
     return this.request<{ status: string }>('/light/mode', {
       method: 'POST',

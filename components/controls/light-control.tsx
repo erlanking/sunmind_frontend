@@ -82,15 +82,9 @@ export function LightControl({ deviceId }: Props) {
 
   const handleBrightnessChange = async (value: number) => {
     setBrightness(value);
+    if (!deviceId) return;
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://sunmindthebestbackend-production.up.railway.app'}/light/brightness`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value }),
-        },
-      );
+      await apiClient.setDeviceBrightness(deviceId, value);
     } catch {
       toast.error('Не удалось изменить яркость');
     }
