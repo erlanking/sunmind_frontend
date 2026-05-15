@@ -13,7 +13,11 @@ interface Props {
 }
 
 export function LightControl({ deviceId }: Props) {
-  const { settings, togglePower, setBrightness, setMode, setControlMode } = useLightStore();
+  const { settings, togglePower, setBrightness, setMode, setControlMode, setDeviceId } = useLightStore();
+
+  useEffect(() => {
+    setDeviceId(deviceId ?? null);
+  }, [deviceId, setDeviceId]);
   const [isConfirming, setIsConfirming] = useState(false);
   const [controlMode, setLocalControlMode] = useState<ControlMode>('manual');
 
