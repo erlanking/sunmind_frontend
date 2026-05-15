@@ -111,6 +111,13 @@ class ApiClient {
     return this.request<{ status: string }>('/light/off', { method: 'POST' });
   }
 
+  async controlDevice(deviceId: string, state: boolean): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ state }),
+    });
+  }
+
   async setControlMode(mode: 'manual' | 'auto'): Promise<{ status: string }> {
     return this.request<{ status: string }>('/light/mode', {
       method: 'POST',
