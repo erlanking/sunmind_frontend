@@ -18,5 +18,8 @@ export interface Review {
 
 export interface NewReview {
   rating: number;
-  comment: string;
+  comment?: string;
+  author?: string;
+  text?: string;
+  date?: string;
 }
