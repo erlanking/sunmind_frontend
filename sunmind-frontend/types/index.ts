@@ -9,11 +9,14 @@ export interface User {
 
 export interface Review {
   id: string;
-  userId: string;
-  userName: string;
+  userId?: string;
+  userName?: string;
+  author?: string;
+  text?: string;
+  comment?: string;
   rating: number;
-  comment: string;
-  createdAt: string;
+  date?: string;
+  createdAt?: string;
 }
 
 export interface NewReview {
