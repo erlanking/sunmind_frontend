@@ -1,3 +1,14 @@
+export interface DeviceStatus {
+  deviceId: string;
+  name: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  online?: boolean;
+  batteryPercent?: number | null;
+  brightness?: number | null;
+  lux?: number | null;
+}
+
 export interface Device {
   id: string;
   name: string;
