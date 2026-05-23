@@ -179,7 +179,7 @@ export function ReviewsSection() {
                   </div>
                 </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(review.date).toLocaleDateString('ru-RU', {
+                  {new Date(review.date ?? review.createdAt ?? '').toLocaleDateString('ru-RU', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
