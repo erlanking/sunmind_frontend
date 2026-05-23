@@ -174,7 +174,7 @@ export default function AdminMapTab({
 
       // Click on map to place device
       map.on('click', async (e: { latlng: { lat: number; lng: number } }) => {
-        const currentPlacing = (window as Record<string, unknown>).__sm_placing as string | null;
+        const currentPlacing = (window as unknown as Record<string, unknown>).__sm_placing as string | null;
         if (!currentPlacing) return;
         const { lat, lng } = e.latlng;
         await fetch(`${baseUrl}/admin/devices/${encodeURIComponent(currentPlacing)}/location`, {
@@ -182,7 +182,7 @@ export default function AdminMapTab({
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ latitude: lat, longitude: lng }),
         });
-        (window as Record<string, unknown>).__sm_placing = null;
+        (window as unknown as Record<string, unknown>).__sm_placing = null;
         setPlacingId(null);
         onRefresh();
       });
@@ -201,7 +201,7 @@ export default function AdminMapTab({
   const handlePlaceToggle = (deviceId: string) => {
     const next = placingId === deviceId ? null : deviceId;
     setPlacingId(next);
-    (window as Record<string, unknown>).__sm_placing = next;
+    (window as unknown as Record<string, unknown>).__sm_placing = next;
     if (mapRef.current) {
       const container = mapContainerRef.current;
       if (container) container.style.cursor = next ? 'crosshair' : 'grab';
