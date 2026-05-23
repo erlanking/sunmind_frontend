@@ -2,7 +2,7 @@ export const API_CONFIG = {
   baseUrl:
     process.env.NEXT_PUBLIC_API_URL ||
     'https://sunmindthebestbackend-production.up.railway.app',
-  wsUrl:
+  wsURL:
     process.env.NEXT_PUBLIC_WS_URL ||
     'wss://sunmindthebestbackend-production.up.railway.app',
 };
