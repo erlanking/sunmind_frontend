@@ -1,0 +1,212 @@
+import { NewReview, Review } from '@/types';
+import { API_CONFIG, getAuthToken } from './config';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  UserResponse,
+  ApiError,
+  DeviceStatus,
+  ScheduleSettings,
+} from './types';
+
+class ApiClient {
+  private baseURL: string;
+
+  constructor(baseURL: string = process.env.REACT_APP_BASE_URL || API_CONFIG.baseURL) {
+    this.baseURL = baseURL;
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = getAuthToken();
+    const headers = new Headers(options.headers);
+
+    headers.set('Content-Type', 'application/json');
+
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      ...options,
+      headers,
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData: ApiError = await response.json().catch(() => ({
+          detail: `HTTP ${response.status}: ${response.statusText}`,
+        }));
+
+        throw new Error(
+          errorData.detail || errorData.message || errorData.error || 'Ошибка запроса',
+        );
+      }
+
+      if (response.status === 204) {
+        return {} as T;
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Неизвестная ошибка при выполнении запроса');
+    }
+  }
+
+  // Аутентификация
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    return this.request<LoginResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async register(data: RegisterRequest): Promise<UserResponse> {
+    return this.request<UserResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCurrentUser(token?: string): Promise<UserResponse> {
+    return this.request<UserResponse>('/auth/me', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : `Bearer ${getAuthToken()}`,
+      },
+    });
+  }
+
+  // Отзывы
+  async getReviews(): Promise<Review[]> {
+    return this.request<Review[]>('/review', { method: 'GET' });
+  }
+
+  async addReview(data: NewReview): Promise<Review> {
+    return this.request<Review>('/review', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteReview(id: string): Promise<void> {
+    return this.request<void>(`/review/${id}`, { method: 'DELETE' });
+  }
+
+  // Управление светом (без auth)
+  async toggle(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/toggle', { method: 'POST' });
+  }
+
+  async turnOn(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/on', { method: 'POST' });
+  }
+
+  async turnOff(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/off', { method: 'POST' });
+  }
+
+  async controlDevice(deviceId: string, state: boolean): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ state }),
+    });
+  }
+
+  async setDeviceBrightness(deviceId: string, brightness: number): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ brightness }),
+    });
+  }
+
+  async setDeviceMode(deviceId: string, mode: 'manual' | 'auto'): Promise<unknown> {
+    return this.request(`/api/devices/${deviceId}/control`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  async setControlMode(mode: 'manual' | 'auto'): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/light/mode', {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  // Устройства (с auth)
+  async updateDevice(
+    deviceId: string,
+    data: { name?: string; latitude?: number | null; longitude?: number | null; zoneId?: number | null },
+  ): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getDevices(): Promise<DeviceStatus[]> {
+    return this.request<DeviceStatus[]>('/api/devices');
+  }
+
+  async getDeviceStatus(deviceId: string): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/status`);
+  }
+
+  // Расписание
+  async getSchedule(deviceId: string): Promise<ScheduleSettings> {
+    return this.request<ScheduleSettings>(`/api/devices/${deviceId}/schedule`);
+  }
+
+  async setSchedule(
+    deviceId: string,
+    schedule: Omit<ScheduleSettings, 'deviceId'>,
+  ): Promise<ScheduleSettings> {
+    return this.request<ScheduleSettings>(`/api/devices/${deviceId}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(schedule),
+    });
+  }
+
+  // Управление АКБ
+  async setCharging(deviceId: string, isCharging: boolean): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/charge`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isCharging }),
+    });
+  }
+
+  async setPowerSource(deviceId: string, powerSource: 'battery' | 'ac'): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/power-source`, {
+      method: 'PATCH',
+      body: JSON.stringify({ powerSource }),
+    });
+  }
+
+  async setBatteryChargeMode(
+    deviceId: string,
+    settings: {
+      chargeMode: 'manual' | 'auto';
+      lowBatteryThreshold: number;
+      fullChargeThreshold: number;
+      autoSolarCharge: boolean;
+    },
+  ): Promise<DeviceStatus> {
+    return this.request<DeviceStatus>(`/api/devices/${deviceId}/battery-charge-mode`, {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  // Health check
+  async healthCheck(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/health');
+  }
+}
+
+export const apiClient = new ApiClient();
