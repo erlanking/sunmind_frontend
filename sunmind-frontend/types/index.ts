@@ -1,5 +1,13 @@
 export type TimePeriod = 'day' | 'week' | 'month';
 
+export type LightMode = 'economy' | 'default' | 'maximum';
+
+export interface LightSettings {
+  isOn: boolean;
+  brightness: number;
+  mode: LightMode;
+}
+
 export interface User {
   id: number;
   name: string;
