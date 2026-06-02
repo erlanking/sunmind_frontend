@@ -113,6 +113,8 @@ export interface DeviceSettings {
 export interface DeviceStatus {
   deviceId: string;
   name: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   connected?: boolean;
   online?: boolean;
   batteryPercent?: number | null;
