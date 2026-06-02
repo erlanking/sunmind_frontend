@@ -12,6 +12,15 @@ interface Props {
   deviceId?: string | null;
 }
 
+const ORANGE_GRADIENT = 'linear-gradient(135deg, #FFD54F, #FF9F43, #FF6B35)';
+
+const MODES: { value: LightMode; label: string; hint: string; icon: string; brightness: number }[] = [
+  { value: 'economy',  label: 'Эконом',    hint: '25%',  icon: '🌙', brightness: 64 },
+  { value: 'default',  label: 'Стандарт',  hint: '50%',  icon: '☀️', brightness: 128 },
+  { value: 'maximum',  label: 'Максимум',  hint: '100%', icon: '🔆', brightness: 255 },
+  { value: 'custom',   label: 'Свой',      hint: '—',    icon: '🎚️', brightness: 128 },
+];
+
 export function LightControl({ deviceId }: Props) {
   const { settings, togglePower, setBrightness, setMode, setControlMode, resetToDefault } =
     useLightStore();
@@ -23,7 +32,8 @@ export function LightControl({ deviceId }: Props) {
 
   useEffect(() => {
     if (!deviceId) return;
-    apiClient.getSchedule(deviceId)
+    apiClient
+      .getSchedule(deviceId)
       .then((s) => setSchedule({ onHour: s.onHour, onMinute: s.onMinute, offHour: s.offHour, offMinute: s.offMinute }))
       .catch(() => {});
   }, [deviceId]);
@@ -31,11 +41,7 @@ export function LightControl({ deviceId }: Props) {
   const handleTogglePower = () => {
     if (settings.isOn) {
       setIsConfirming(true);
-      setTimeout(() => {
-        togglePower();
-        toast.success('Светильник выключен');
-        setIsConfirming(false);
-      }, 500);
+      setTimeout(() => { togglePower(); toast.success('Светильник выключен'); setIsConfirming(false); }, 500);
     } else {
       togglePower();
       toast.success('Светильник включен');
@@ -45,260 +51,212 @@ export function LightControl({ deviceId }: Props) {
   const handleBrightnessChange = async (value: number) => {
     setBrightness(value);
     if (!deviceId) return;
-    try {
-      await apiClient.setDeviceBrightness(deviceId, value);
-      toast.success(`Яркость: ${Math.round((value / 255) * 100)}%`);
-    } catch {
-      toast.error('Не удалось изменить яркость');
-    }
-  };
-
-  const MODE_BRIGHTNESS: Record<LightMode, number> = {
-    economy: 64,
-    maximum: 255,
-    default: 128,
-    custom: 128,
+    try { await apiClient.setDeviceBrightness(deviceId, value); }
+    catch { toast.error('Не удалось изменить яркость'); }
   };
 
   const handleModeChange = async (mode: LightMode) => {
+    const m = MODES.find((x) => x.value === mode)!;
     setMode(mode);
-    const newBrightness = MODE_BRIGHTNESS[mode];
-    setBrightness(newBrightness);
-    toast.success(`Режим: ${getModeLabel(mode)}`);
+    setBrightness(m.brightness);
+    toast.success(`Режим: ${m.label}`);
     if (!deviceId) return;
-    try {
-      await apiClient.setDeviceBrightness(deviceId, newBrightness);
-    } catch {
-      toast.error('Не удалось синхронизировать режим');
-    }
+    try { await apiClient.setDeviceBrightness(deviceId, m.brightness); }
+    catch { toast.error('Не удалось синхронизировать режим'); }
   };
-
-  const handleReset = () => {
-    resetToDefault();
-    toast.success('Настройки сброшены');
-  };
-
-  const getModeLabel = (mode: LightMode): string => ({
-    economy: 'Эконом',
-    maximum: 'Максимум',
-    default: 'По умолчанию',
-    custom: 'Пользовательский',
-  })[mode];
 
   const handleControlModeChange = (mode: 'manual' | 'auto') => {
     setControlMode(mode);
-    toast.success(`Режим: ${mode === 'manual' ? 'Ручной' : 'Автоматический'}`);
+    toast.success(mode === 'manual' ? 'Ручной режим' : 'Автоматический режим');
   };
 
   const handleSaveSchedule = async () => {
     if (!deviceId) { toast.error('Устройство не выбрано'); return; }
     setScheduleLoading(true);
-    try {
-      await apiClient.setSchedule(deviceId, schedule);
-      toast.success('Расписание сохранено');
-    } catch {
-      toast.error('Не удалось сохранить расписание');
-    } finally {
-      setScheduleLoading(false);
-    }
+    try { await apiClient.setSchedule(deviceId, schedule); toast.success('Расписание сохранено'); }
+    catch { toast.error('Не удалось сохранить расписание'); }
+    finally { setScheduleLoading(false); }
   };
 
-  const formatTime = (h: number, m: number) =>
+  const fmt = (h: number, m: number) =>
     `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
-  const parseTime = (value: string) => {
-    const [h, m] = value.split(':').map(Number);
+  const parseTime = (v: string) => {
+    const [h, m] = v.split(':').map(Number);
     return { h: isNaN(h) ? 0 : h, m: isNaN(m) ? 0 : m };
   };
 
+  const brightnessPercent = Math.round((settings.brightness / 255) * 100);
+
   return (
-    <div className="space-y-6">
-      {/* Включение/выключение */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Управление питанием
-        </h3>
-        <div className="flex items-center justify-center">
+    <div className="space-y-4">
+
+      {/* ── Питание ── */}
+      <div className="rounded-3xl bg-white p-5 dark:bg-[#171A1F]">
+        <p className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400">
+          Питание
+        </p>
+        <div className="flex flex-col items-center gap-3">
           <button
             onClick={handleTogglePower}
             disabled={isConfirming || settings.controlMode === 'auto'}
-            className={`relative flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300 ${
+            className={`relative flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300 disabled:opacity-60 ${isConfirming ? 'animate-pulse' : ''}`}
+            style={
               settings.isOn
-                ? 'bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/50'
-                : 'bg-gray-300 dark:bg-gray-700'
-            } ${isConfirming ? 'animate-pulse' : ''}`}>
+                ? { background: ORANGE_GRADIENT, boxShadow: '0 8px 32px #FF9F4366' }
+                : { background: '#E5E7EB' }
+            }>
             <svg
-              className={`h-16 w-16 transition-colors ${settings.isOn ? 'text-white' : 'text-gray-500'}`}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              {settings.isOn ? (
-                <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              ) : (
-                <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              )}
+              className={`h-14 w-14 transition-colors ${settings.isOn ? 'text-[#1A0F00]' : 'text-gray-400'}`}
+              fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+              viewBox="0 0 24 24" stroke="currentColor">
+              {settings.isOn
+                ? <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                : <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />}
             </svg>
             {settings.isOn && (
-              <div className="absolute inset-0 animate-ping rounded-full bg-orange-400 opacity-75" />
+              <div className="absolute inset-0 animate-ping rounded-full bg-orange-400 opacity-40" />
             )}
           </button>
+          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+            {settings.isOn ? 'Светильник включён' : 'Светильник выключен'}
+          </p>
         </div>
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          {settings.isOn ? 'Светильник включен' : 'Светильник выключен'}
-        </p>
       </div>
 
-      {/* Режим управления */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+      {/* ── Режим управления ── */}
+      <div className="rounded-3xl bg-white p-5 dark:bg-[#171A1F]">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
           Режим управления
-        </h3>
-        <div className="flex gap-4">
-          {(['manual', 'auto'] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => handleControlModeChange(mode)}
-              className={`flex-1 rounded-lg border p-3 text-center font-medium transition-colors ${
-                settings.controlMode === mode
-                  ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600'
-              }`}>
-              {mode === 'manual' ? 'Ручной' : 'Автоматический'}
-            </button>
-          ))}
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            { value: 'manual', label: 'Ручной',       hint: 'Вы управляете',    icon: '🎛️' },
+            { value: 'auto',   label: 'Автоматический', hint: 'Датчик движения', icon: '🤖' },
+          ] as const).map(({ value, label, hint, icon }) => {
+            const sel = settings.controlMode === value;
+            return (
+              <button
+                key={value}
+                onClick={() => handleControlModeChange(value)}
+                className="flex flex-col items-center gap-1 rounded-2xl border py-5 transition-all duration-200"
+                style={sel
+                  ? { background: ORANGE_GRADIENT, borderColor: 'transparent', color: '#1A0F00' }
+                  : { background: 'transparent', borderColor: '#D0D5E0', color: '#6D7481' }}>
+                <span className="text-3xl">{icon}</span>
+                <span className="text-sm font-bold">{label}</span>
+                <span className="text-xs opacity-60">{hint}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Яркость */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Яркость</h3>
+      {/* ── Яркость ── */}
+      <div className="rounded-3xl bg-white p-5 dark:bg-[#171A1F]">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Яркость</p>
+          <span className="rounded-lg px-2.5 py-1 text-sm font-bold"
+            style={{ background: '#FF9F4320', color: '#FF9F43' }}>
+            {brightnessPercent}%
+          </span>
+        </div>
         <input
-          type="range"
-          min="0"
-          max="255"
+          type="range" min="0" max="255"
           value={settings.brightness}
-          onChange={(e) => handleBrightnessChange(Number(e.target.value))}
           disabled={settings.controlMode === 'auto'}
-          className="h-2 w-full cursor-pointer appearance-none rounded-lg"
+          onChange={(e) => handleBrightnessChange(Number(e.target.value))}
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full disabled:opacity-40"
           style={{
-            background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${Math.round((settings.brightness / 255) * 100)}%, #e5e7eb ${Math.round((settings.brightness / 255) * 100)}%, #e5e7eb 100%)`,
+            background: `linear-gradient(to right, #FF9F43 0%, #FF9F43 ${brightnessPercent}%, #E5E7EB ${brightnessPercent}%, #E5E7EB 100%)`,
           }}
         />
-        <div className="mt-2 flex justify-between">
-          <span className="text-sm text-gray-600 dark:text-gray-400">0%</span>
-          <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-            {Math.round((settings.brightness / 255) * 100)}%
-          </span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">100%</span>
+        <div className="mt-2 flex justify-between text-xs text-gray-400">
+          <span>0%</span>
+          <span>100%</span>
         </div>
       </div>
 
-      {/* Режимы работы */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Режимы работы</h3>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {(['economy', 'maximum', 'default', 'custom'] as LightMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => handleModeChange(mode)}
-              className={`rounded-lg border-2 p-4 text-center transition-all ${
-                settings.mode === mode
-                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                  : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800'
-              }`}>
-              <div
-                className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${
-                  settings.mode === mode
-                    ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
-                    : 'bg-gray-200 dark:bg-gray-700'
-                }`}>
-                <svg
-                  className={`h-6 w-6 ${settings.mode === mode ? 'text-white' : 'text-gray-500'}`}
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <span
-                className={`text-sm font-medium ${
-                  settings.mode === mode
-                    ? 'text-orange-600 dark:text-orange-400'
-                    : 'text-gray-700 dark:text-gray-300'
-                }`}>
-                {getModeLabel(mode)}
-              </span>
-            </button>
-          ))}
+      {/* ── Режимы работы ── */}
+      <div className="rounded-3xl bg-white p-5 dark:bg-[#171A1F]">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+          Режимы работы
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {MODES.map(({ value, label, hint, icon }) => {
+            const sel = settings.mode === value;
+            return (
+              <button
+                key={value}
+                onClick={() => handleModeChange(value)}
+                className="flex flex-col items-center gap-1 rounded-2xl border py-4 transition-all duration-200"
+                style={sel
+                  ? { background: ORANGE_GRADIENT, borderColor: 'transparent', color: '#1A0F00' }
+                  : { background: 'transparent', borderColor: '#D0D5E0', color: '#6D7481' }}>
+                <span className="text-2xl">{icon}</span>
+                <span className="text-sm font-bold">{label}</span>
+                <span className="text-xs opacity-60">{hint}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Расписание */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Расписание</h3>
-        <div className="grid grid-cols-2 gap-4">
+      {/* ── Расписание ── */}
+      <div className="rounded-3xl bg-white p-5 dark:bg-[#171A1F]">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+          Расписание
+        </p>
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
               Включить в
             </label>
             <input
               type="time"
-              value={formatTime(schedule.onHour, schedule.onMinute)}
-              onChange={(e) => {
-                const { h, m } = parseTime(e.target.value);
-                setSchedule((prev) => ({ ...prev, onHour: h, onMinute: m }));
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              value={fmt(schedule.onHour, schedule.onMinute)}
+              onChange={(e) => { const { h, m } = parseTime(e.target.value); setSchedule((p) => ({ ...p, onHour: h, onMinute: m })); }}
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400">
               Выключить в
             </label>
             <input
               type="time"
-              value={formatTime(schedule.offHour, schedule.offMinute)}
-              onChange={(e) => {
-                const { h, m } = parseTime(e.target.value);
-                setSchedule((prev) => ({ ...prev, offHour: h, offMinute: m }));
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              value={fmt(schedule.offHour, schedule.offMinute)}
+              onChange={(e) => { const { h, m } = parseTime(e.target.value); setSchedule((p) => ({ ...p, offHour: h, offMinute: m })); }}
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
             />
           </div>
         </div>
         <button
           onClick={handleSaveSchedule}
           disabled={scheduleLoading || !deviceId}
-          className="mt-4 w-full rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+          className="mt-4 w-full rounded-2xl py-3 text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ background: ORANGE_GRADIENT, color: '#1A0F00' }}>
           {scheduleLoading ? 'Сохранение...' : 'Сохранить расписание'}
         </button>
       </div>
 
-      {/* Аккумулятор */}
+      {/* ── Аккумулятор ── */}
       {deviceId && (
         <div>
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Аккумулятор</h3>
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+            Аккумулятор
+          </p>
           <BatteryControl deviceId={deviceId} />
         </div>
       )}
 
-      {/* Сброс настроек */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Дополнительные действия
-        </h3>
-        <button
-          onClick={handleReset}
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-          Сбросить настройки по умолчанию
-        </button>
-      </div>
+      {/* ── Сброс ── */}
+      <button
+        onClick={() => { resetToDefault(); toast.success('Настройки сброшены'); }}
+        className="w-full rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20">
+        Сбросить настройки
+      </button>
+
     </div>
   );
 }
