@@ -124,21 +124,21 @@ class ApiClient {
   async controlDevice(deviceId: string, isOn: boolean): Promise<unknown> {
     return this.request(`/api/devices/${deviceId}/control`, {
       method: 'POST',
-      body: JSON.stringify({ command: isOn ? 'turn_on' : 'turn_off' }),
+      body: JSON.stringify({ state: isOn }),
     });
   }
 
   async setDeviceBrightness(deviceId: string, brightness: number): Promise<unknown> {
     return this.request(`/api/devices/${deviceId}/control`, {
       method: 'POST',
-      body: JSON.stringify({ command: 'set_brightness', value: brightness }),
+      body: JSON.stringify({ brightness }),
     });
   }
 
   async setDeviceMode(deviceId: string, mode: string): Promise<unknown> {
     return this.request(`/api/devices/${deviceId}/control`, {
       method: 'POST',
-      body: JSON.stringify({ command: 'set_mode', value: mode }),
+      body: JSON.stringify({ mode }),
     });
   }
 
@@ -156,15 +156,15 @@ class ApiClient {
 
   // АКБ
   async setCharging(deviceId: string, isCharging: boolean): Promise<unknown> {
-    return this.request(`/api/devices/${deviceId}/battery`, {
-      method: 'POST',
+    return this.request(`/api/devices/${deviceId}/charge`, {
+      method: 'PATCH',
       body: JSON.stringify({ isCharging }),
     });
   }
 
   async setPowerSource(deviceId: string, powerSource: 'battery' | 'ac'): Promise<unknown> {
-    return this.request(`/api/devices/${deviceId}/battery`, {
-      method: 'POST',
+    return this.request(`/api/devices/${deviceId}/power-source`, {
+      method: 'PATCH',
       body: JSON.stringify({ powerSource }),
     });
   }
@@ -178,8 +178,8 @@ class ApiClient {
       autoSolarCharge: boolean;
     },
   ): Promise<unknown> {
-    return this.request(`/api/devices/${deviceId}/battery`, {
-      method: 'POST',
+    return this.request(`/api/devices/${deviceId}/battery-charge-mode`, {
+      method: 'PATCH',
       body: JSON.stringify(settings),
     });
   }

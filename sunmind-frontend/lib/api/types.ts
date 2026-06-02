@@ -125,10 +125,9 @@ export interface DeviceStatus {
   mode?: string;
   isCharging?: boolean;
   powerSource?: 'battery' | 'ac';
-  chargeMode?: 'manual' | 'auto';
-  lowBatteryThreshold?: number;
-  fullChargeThreshold?: number;
-  autoSolarCharge?: boolean;
+  batteryMode?: 'manual' | 'auto';
+  chargeStartThreshold?: number;
+  chargeStopThreshold?: number;
 }
 
 export interface ScheduleSettings {

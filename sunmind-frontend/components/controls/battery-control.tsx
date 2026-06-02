@@ -35,10 +35,9 @@ export function BatteryControl({ deviceId }: Props) {
         setBatteryVoltage((s.batteryVoltage ?? 0) as number);
         setIsCharging(s.isCharging ?? false);
         if (s.powerSource === 'ac' || s.powerSource === 'battery') setPowerSource(s.powerSource);
-        if (s.chargeMode === 'auto' || s.chargeMode === 'manual') setChargeMode(s.chargeMode);
-        setLowThreshold(s.lowBatteryThreshold ?? 20);
-        setFullThreshold(s.fullChargeThreshold ?? 90);
-        setAutoSolar(s.autoSolarCharge ?? true);
+        if (s.batteryMode === 'auto' || s.batteryMode === 'manual') setChargeMode(s.batteryMode);
+        setLowThreshold(s.chargeStartThreshold ?? 20);
+        setFullThreshold(s.chargeStopThreshold ?? 90);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -65,7 +64,7 @@ export function BatteryControl({ deviceId }: Props) {
         chargeMode: mode,
         lowBatteryThreshold: lowThreshold,
         fullChargeThreshold: fullThreshold,
-        autoSolarCharge: autoSolar,
+        autoSolarCharge: true,
       });
     } catch {
       setChargeMode(prev);
@@ -111,7 +110,7 @@ export function BatteryControl({ deviceId }: Props) {
         chargeMode,
         lowBatteryThreshold: lowThreshold,
         fullChargeThreshold: fullThreshold,
-        autoSolarCharge: autoSolar,
+        autoSolarCharge: true,
       });
       toast.success('Настройки сохранены');
     } catch {
