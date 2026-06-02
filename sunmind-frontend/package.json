@@ -19,10 +19,12 @@
     "react-hot-toast": "^2.6.0",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
+    "leaflet": "^1.9.4",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
