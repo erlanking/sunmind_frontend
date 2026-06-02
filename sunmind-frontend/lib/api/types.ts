@@ -4,9 +4,27 @@ export interface DeviceStatus {
   latitude: number | null;
   longitude: number | null;
   online?: boolean;
+  connected?: boolean;
   batteryPercent?: number | null;
+  batteryVoltage?: number | null;
   brightness?: number | null;
   lux?: number | null;
+  manualMode?: boolean;
+  mode?: string;
+  isCharging?: boolean;
+  powerSource?: 'battery' | 'ac';
+  chargeMode?: 'manual' | 'auto';
+  lowBatteryThreshold?: number;
+  fullChargeThreshold?: number;
+  autoSolarCharge?: boolean;
+}
+
+export interface ScheduleSettings {
+  deviceId?: string;
+  onHour: number;
+  onMinute: number;
+  offHour: number;
+  offMinute: number;
 }
 
 export interface Device {
