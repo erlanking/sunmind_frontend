@@ -5,7 +5,8 @@ import { useLightStore } from '@/store/light-store';
 import { apiClient } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
 import type { LightMode } from '@/types';
-import type { DeviceStatus, ScheduleSettings } from '@/lib/api/types';
+import type { ScheduleSettings } from '@/lib/api/types';
+import { BatteryControl } from './battery-control';
 
 interface Props {
   deviceId?: string | null;
@@ -15,8 +16,6 @@ export function LightControl({ deviceId }: Props) {
   const { settings, togglePower, setBrightness, setMode, setControlMode, resetToDefault } =
     useLightStore();
   const [isConfirming, setIsConfirming] = useState(false);
-  const [batteryStatus, setBatteryStatus] = useState<DeviceStatus | null>(null);
-  const [batteryLoading, setBatteryLoading] = useState(false);
   const [schedule, setSchedule] = useState<Omit<ScheduleSettings, 'deviceId'>>({
     onHour: 8, onMinute: 0, offHour: 22, offMinute: 0,
   });
@@ -24,7 +23,6 @@ export function LightControl({ deviceId }: Props) {
 
   useEffect(() => {
     if (!deviceId) return;
-    apiClient.getDeviceStatus(deviceId).then(setBatteryStatus).catch(() => {});
     apiClient.getSchedule(deviceId)
       .then((s) => setSchedule({ onHour: s.onHour, onMinute: s.onMinute, offHour: s.offHour, offMinute: s.offMinute }))
       .catch(() => {});
@@ -102,47 +100,6 @@ export function LightControl({ deviceId }: Props) {
       toast.error('Не удалось сохранить расписание');
     } finally {
       setScheduleLoading(false);
-    }
-  };
-
-  const handleSetCharging = async (isCharging: boolean) => {
-    if (!deviceId) return;
-    try {
-      await apiClient.setCharging(deviceId, isCharging);
-      setBatteryStatus((prev) => (prev ? { ...prev, isCharging } : null));
-      toast.success(isCharging ? 'Зарядка включена' : 'Зарядка отключена');
-    } catch {
-      toast.error('Ошибка управления зарядкой');
-    }
-  };
-
-  const handleSetPowerSource = async (powerSource: 'battery' | 'ac') => {
-    if (!deviceId) return;
-    try {
-      await apiClient.setPowerSource(deviceId, powerSource);
-      setBatteryStatus((prev) => (prev ? { ...prev, powerSource } : null));
-      toast.success(powerSource === 'battery' ? 'Источник: Аккумулятор' : 'Источник: Сеть (AC)');
-    } catch {
-      toast.error('Ошибка переключения питания');
-    }
-  };
-
-  const handleSetChargeMode = async (chargeMode: 'manual' | 'auto') => {
-    if (!deviceId || !batteryStatus) return;
-    setBatteryLoading(true);
-    try {
-      await apiClient.setBatteryChargeMode(deviceId, {
-        chargeMode,
-        lowBatteryThreshold: batteryStatus.lowBatteryThreshold ?? 20,
-        fullChargeThreshold: batteryStatus.fullChargeThreshold ?? 90,
-        autoSolarCharge: batteryStatus.autoSolarCharge ?? true,
-      });
-      setBatteryStatus((prev) => (prev ? { ...prev, chargeMode } : null));
-      toast.success(chargeMode === 'auto' ? 'Зарядка: Авто' : 'Зарядка: Ручной');
-    } catch {
-      toast.error('Ошибка настройки режима зарядки');
-    } finally {
-      setBatteryLoading(false);
     }
   };
 
@@ -325,102 +282,9 @@ export function LightControl({ deviceId }: Props) {
 
       {/* Аккумулятор */}
       {deviceId && (
-        <div className="rounded-lg border bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div>
           <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Аккумулятор</h3>
-          {batteryStatus ? (
-            <div className="space-y-5">
-              {batteryStatus.batteryPercent != null && (
-                <div>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Уровень заряда</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {batteryStatus.batteryPercent}%
-                    </span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        (batteryStatus.batteryPercent ?? 0) > 50
-                          ? 'bg-green-500'
-                          : (batteryStatus.batteryPercent ?? 0) > 20
-                            ? 'bg-yellow-500'
-                            : 'bg-red-500'
-                      }`}
-                      style={{ width: `${batteryStatus.batteryPercent ?? 0}%` }}
-                    />
-                  </div>
-                  {batteryStatus.batteryVoltage != null && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      {batteryStatus.batteryVoltage.toFixed(2)} В
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Источник питания
-                </p>
-                <div className="flex gap-3">
-                  {(['battery', 'ac'] as const).map((src) => (
-                    <button
-                      key={src}
-                      onClick={() => handleSetPowerSource(src)}
-                      className={`flex-1 rounded-lg border p-2 text-sm font-medium transition-colors ${
-                        batteryStatus.powerSource === src
-                          ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                      }`}>
-                      {src === 'battery' ? 'Аккумулятор' : 'Сеть (AC)'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                <div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Зарядка</span>
-                  <p className="text-xs text-gray-500">
-                    {batteryStatus.isCharging ? 'Идёт зарядка' : 'Не заряжается'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleSetCharging(!batteryStatus.isCharging)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
-                    batteryStatus.isCharging ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}>
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ${
-                      batteryStatus.isCharging ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Режим зарядки
-                </p>
-                <div className="flex gap-3">
-                  {(['auto', 'manual'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => handleSetChargeMode(mode)}
-                      disabled={batteryLoading}
-                      className={`flex-1 rounded-lg border p-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-                        batteryStatus.chargeMode === mode
-                          ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                      }`}>
-                      {mode === 'auto' ? 'Авто' : 'Ручной'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-center text-sm text-gray-500">Загрузка данных аккумулятора...</p>
-          )}
+          <BatteryControl deviceId={deviceId} />
         </div>
       )}
 
