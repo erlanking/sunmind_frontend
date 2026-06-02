@@ -50,10 +50,10 @@ export const useLightStore = create<LightState>()(
         if (deviceId && wsClient.isConnected()) {
           try {
             wsClient.sendCommand({
-              type: 'command',
+              type: 'send_command',
               device_id: deviceId,
               command: 'set_brightness',
-              value: brightness,
+              payload: { brightness },
             });
           } catch (error) {
             console.error('Ошибка при отправке команды изменения яркости:', error);
@@ -85,10 +85,10 @@ export const useLightStore = create<LightState>()(
           try {
             const brightness = modeSettings.brightness || settings.brightness;
             wsClient.sendCommand({
-              type: 'command',
+              type: 'send_command',
               device_id: deviceId,
               command: 'set_brightness',
-              value: brightness,
+              payload: { brightness },
             });
           } catch (error) {
             console.error('Ошибка при отправке команды изменения режима:', error);
@@ -107,11 +107,7 @@ export const useLightStore = create<LightState>()(
         }));
 
         try {
-          const response = deviceId
-            ? await apiClient.controlDevice(deviceId, newState)
-            : newState
-              ? await apiClient.turnOn()
-              : await apiClient.turnOff();
+          const response = await apiClient.toggle();
           console.log('response', response);
         } catch (error) {
           console.error('Ошибка при отправке команды переключения питания:', error);
@@ -139,7 +135,7 @@ export const useLightStore = create<LightState>()(
           set((state) => ({
             settings: {
               ...state.settings,
-              isOn: (telemetry.brightness ?? 0) > 0,
+              isOn: telemetry.relay_state === 'ON',
               brightness: telemetry.lux
                 ? Math.min(100, Math.max(0, telemetry.lux / 10))
                 : state.settings.brightness,
@@ -151,15 +147,12 @@ export const useLightStore = create<LightState>()(
 
       // Новый метод для управления режимом
       setControlMode: async (mode: 'manual' | 'auto') => {
-        const { deviceId } = get();
         set((state) => ({
           settings: { ...state.settings, controlMode: mode },
         }));
 
         try {
-          const response = deviceId
-            ? await apiClient.setDeviceMode(deviceId, mode)
-            : await apiClient.setControlMode(mode);
+          const response = await apiClient.setControlMode(mode);
           console.log('mode toggle', response);
           return response;
         } catch (error) {

@@ -1,36 +1,70 @@
-export type TimePeriod = 'day' | 'week' | 'month';
+// Типы пользователей и ролей
+export type UserRole = 'guest' | 'admin' | 'instructor' | 'user';
 
-export type LightMode = 'economy' | 'default' | 'maximum';
-
-export interface LightSettings {
-  isOn: boolean;
-  brightness: number;
-  mode: LightMode;
+export interface Role {
+  id: number;
+  role_name: string; // "USER", "ADMIN"
+  description: string;
 }
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  roles?: { role_name: string }[];
+  roles: Role[];
+  created_at?: string;
 }
 
+// Настройки светильника
+export type LightMode = 'economy' | 'maximum' | 'default' | 'custom';
+
+export interface LightSettings {
+  isOn: boolean;
+  brightness: number; // 0-100
+  mode: LightMode;
+  customSettings?: {
+    brightness: number;
+    colorTemperature?: number;
+  };
+}
+
+// Данные аналитики
+export interface ActivityData {
+  date: string;
+  activity: number; // количество людей
+}
+
+export interface EnergyData {
+  date: string;
+  energy: number; // кВт·ч
+}
+
+export interface PlasticData {
+  date: string;
+  plastic: number; // кг
+}
+
+export interface AnalyticsData {
+  activity: ActivityData[];
+  energy: EnergyData[];
+  plastic: PlasticData[];
+}
+
+// Период для фильтрации
+export type TimePeriod = 'day' | 'week' | 'month';
+
+// Отзыв
 export interface Review {
   id: string;
-  userId?: string;
-  userName?: string;
-  author?: string;
-  text?: string;
-  comment?: string;
+  author: string;
+  text: string;
   rating: number;
-  date?: string;
-  createdAt?: string;
+  date: string;
 }
 
 export interface NewReview {
+  author: string;
+  text: string;
   rating: number;
-  comment?: string;
-  author?: string;
-  text?: string;
-  date?: string;
+  date: string;
 }

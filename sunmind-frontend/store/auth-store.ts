@@ -1,65 +1,157 @@
 'use client';
+
 import { create } from 'zustand';
-import { API_CONFIG } from '@/lib/api/config';
-
-interface UserRole {
-  role_name: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  roles?: UserRole[];
-}
+import { persist } from 'zustand/middleware';
+import { apiClient } from '@/lib/api/client';
+import { setAuthToken, removeAuthToken } from '@/lib/api/config';
+import { wsClient } from '@/lib/api/websocket';
+import type { User, Role } from '@/types';
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (user: Partial<User>) => void;
+  fetchCurrentUser: () => Promise<void>;
 }
 
-const getStoredToken = () => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+// Дефолтная роль, если с бэка вдруг не пришли роли
+const defaultUserRole: Role = {
+  id: 0,
+  role_name: 'USER',
+  description: 'Default user role',
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: getStoredToken(),
-  isAuthenticated: !!getStoredToken(),
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
 
-  login: async (email: string, password: string) => {
-    const res = await fetch(`${API_CONFIG.baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new Error('Неверный email или пароль');
-    const data = await res.json();
-    localStorage.setItem('auth_token', data.access_token);
-    set({ token: data.access_token, isAuthenticated: true, user: data.user ?? null });
-  },
+      login: async (email: string, password: string) => {
+        set({ isLoading: true });
+        try {
+          const response = await apiClient.login({ email, password });
 
-  register: async (name: string, email: string, password: string) => {
-    const res = await fetch(`${API_CONFIG.baseUrl}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-    if (!res.ok) throw new Error('Ошибка при регистрации');
-    const data = await res.json();
-    localStorage.setItem('auth_token', data.access_token);
-    set({ token: data.access_token, isAuthenticated: true, user: data.user ?? null });
-  },
+          // Получаем информацию о пользователе
+          const user = await apiClient.getCurrentUser(response.access_token);
 
-  logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-    }
-    set({ user: null, token: null, isAuthenticated: false });
-  },
-}));
+          set({
+            user: {
+              ...user,
+              roles:
+                Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [defaultUserRole],
+            },
+            token: response.access_token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          // Подключаем WebSocket после успешного входа
+          if (typeof window !== 'undefined') {
+            wsClient.connect();
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Ошибка при входе:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      register: async (name: string, email: string, password: string) => {
+        set({ isLoading: true });
+        try {
+          const user = await apiClient.register({ name, email, password });
+
+          // После регистрации автоматически входим
+          const loginResponse = await apiClient.login({ email, password });
+
+          set({
+            user: {
+              ...user,
+              roles:
+                Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [defaultUserRole],
+            },
+            token: loginResponse.access_token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          if (typeof window !== 'undefined') {
+            wsClient.connect();
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Ошибка при регистрации:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      logout: () => {
+        removeAuthToken();
+        if (typeof window !== 'undefined') {
+          wsClient.disconnect();
+        }
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        });
+      },
+
+      updateUser: (updates: Partial<User>) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        }));
+      },
+
+      fetchCurrentUser: async () => {
+        const { token } = get();
+        if (!token) return;
+
+        set({ isLoading: true });
+        try {
+          const user = await apiClient.getCurrentUser();
+
+          set({
+            user: {
+              ...user,
+              roles:
+                Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [defaultUserRole],
+            },
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          if (!wsClient.isConnected()) {
+            wsClient.connect();
+          }
+        } catch (error) {
+          console.error('Ошибка при получении пользователя:', error);
+          get().logout();
+          set({ isLoading: false });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state?.token && typeof window !== 'undefined') {
+          setTimeout(() => {
+            state.fetchCurrentUser();
+          }, 100);
+        }
+      },
+    },
+  ),
+);

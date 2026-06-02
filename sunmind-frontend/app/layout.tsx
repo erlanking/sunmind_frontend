@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
-import { ConditionalShell } from '@/components/conditional-shell';
+import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
+
 import { WebSocketProvider } from '@/components/websocket-provider';
 import './globals.css';
 
@@ -30,7 +32,9 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <WebSocketProvider>
-          <ConditionalShell>{children}</ConditionalShell>
+          <Header />
+          <main>{children}</main>
+          <Footer />
         </WebSocketProvider>
         <Toaster
           position="top-right"

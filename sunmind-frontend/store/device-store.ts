@@ -5,7 +5,10 @@ import { wsClient } from '@/lib/api/websocket';
 import type {
   Device,
   DeviceTelemetry,
-  WebSocketMessage,
+  TelemetryMessage,
+  DeviceConnectionMessage,
+  CommandAckMessage,
+  ErrorMessage,
 } from '@/lib/api/types';
 
 interface DeviceState {
@@ -83,7 +86,9 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
   },
 
   initializeWebSocket: () => {
-    const handleMessage = (message: WebSocketMessage) => {
+    const handleMessage = (
+      message: TelemetryMessage | DeviceConnectionMessage | CommandAckMessage | ErrorMessage,
+    ) => {
       if (message.type === 'telemetry') {
         const { device_id, data } = message;
         get().updateTelemetry(device_id, {

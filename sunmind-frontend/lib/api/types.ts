@@ -1,10 +1,120 @@
+// Типы для API запросов и ответов
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+  roles: string;
+  created_at: string;
+}
+
+export interface ApiError {
+  detail?: string;
+  message?: string;
+  error?: string;
+}
+
+// WebSocket типы
+export type WebSocketMessageType = 'telemetry' | 'device_connection' | 'command_ack' | 'error';
+
+export interface TelemetryMessage {
+  type: 'telemetry';
+  device_id: string;
+  data: {
+    lux?: number;
+    motion_detected: boolean;
+    relay_state: 'ON' | 'OFF';
+    battery_level?: number;
+    solar_voltage?: number;
+    power_source: 'solar' | 'battery' | 'grid';
+    timestamp: string;
+  };
+}
+
+export interface DeviceConnectionMessage {
+  type: 'device_connection';
+  device_id: string;
+  device_name: string;
+  connected: boolean;
+}
+
+export interface CommandAckMessage {
+  type: 'command_ack';
+  device_id: string;
+  command_id: string;
+  success: boolean;
+  message?: string;
+}
+
+export interface ErrorMessage {
+  type: 'error';
+  error: string;
+  code: string;
+}
+
+export type WebSocketMessage =
+  | TelemetryMessage
+  | DeviceConnectionMessage
+  | CommandAckMessage
+  | ErrorMessage;
+
+export interface SendCommandMessage {
+  type: 'send_command';
+  device_id: string;
+  command: 'set_relay' | 'set_brightness' | 'reboot';
+  payload: Record<string, any>;
+}
+
+// Типы для устройств
+export interface Device {
+  id: string;
+  name: string;
+  api_key: string;
+  user_id: string;
+  is_online: boolean;
+  last_seen?: string;
+  created_at: string;
+}
+
+export interface DeviceTelemetry {
+  lux?: number;
+  motion_detected: boolean;
+  relay_state: 'ON' | 'OFF';
+  battery_level?: number;
+  solar_voltage?: number;
+  power_source: 'solar' | 'battery' | 'grid';
+  timestamp: string;
+}
+
+export interface DeviceSettings {
+  brightness_default: number;
+  lux_threshold: number;
+  occupancy_timeout: number;
+  eco_mode_enabled: boolean;
+  relay_type: 'normally_open' | 'normally_closed';
+}
+
 export interface DeviceStatus {
   deviceId: string;
   name: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  online?: boolean;
   connected?: boolean;
+  online?: boolean;
   batteryPercent?: number | null;
   batteryVoltage?: number | null;
   brightness?: number | null;
@@ -25,63 +135,4 @@ export interface ScheduleSettings {
   onMinute: number;
   offHour: number;
   offMinute: number;
-}
-
-export interface Device {
-  id: string;
-  name: string;
-  api_key: string;
-  user_id: string;
-  is_online: boolean;
-  last_seen: string;
-  created_at: string;
-}
-
-export interface DeviceTelemetry {
-  temperature?: number;
-  humidity?: number;
-  battery?: number;
-  brightness?: number;
-  lux?: number;
-  motion?: boolean;
-  timestamp: string;
-}
-
-export type WebSocketMessage =
-  | TelemetryMessage
-  | DeviceConnectionMessage
-  | CommandAckMessage
-  | ErrorMessage
-  | SendCommandMessage;
-
-export interface TelemetryMessage {
-  type: 'telemetry';
-  device_id: string;
-  data: DeviceTelemetry & { timestamp?: string };
-}
-
-export interface DeviceConnectionMessage {
-  type: 'device_connection';
-  device_id: string;
-  connected: boolean;
-  device_name: string;
-}
-
-export interface CommandAckMessage {
-  type: 'command_ack';
-  device_id: string;
-  command: string;
-  success: boolean;
-}
-
-export interface ErrorMessage {
-  type: 'error';
-  message: string;
-}
-
-export interface SendCommandMessage {
-  type: 'command';
-  device_id: string;
-  command: string;
-  value?: number | string | boolean;
 }

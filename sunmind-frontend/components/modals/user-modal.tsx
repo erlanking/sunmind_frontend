@@ -18,7 +18,7 @@ const roleLabels: Record<string, string> = {
 export function UserModal({ user, onClose, onLogout }: UserModalProps) {
   console.log('login users', user);
 
-  const userRoleLabel = user.roles?.length
+  const userRoleLabel = user.roles.length
     ? user.roles
         .map((role) => roleLabels[role.role_name.toLowerCase()] || role.role_name)
         .join(', ')

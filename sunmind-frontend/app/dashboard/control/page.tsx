@@ -3,8 +3,6 @@
 import { ProtectedRoute } from '@/components/protected-route';
 import { LightControl } from '@/components/controls/light-control';
 
-const DEVICE_ID = 'SMP-0002';
-
 export default function ControlPage() {
   return (
     <ProtectedRoute>
@@ -20,7 +18,7 @@ export default function ControlPage() {
           </div>
 
           <div className="mx-auto max-w-4xl">
-            <LightControl deviceId={DEVICE_ID} />
+            <LightControl />
           </div>
         </div>
       </div>
